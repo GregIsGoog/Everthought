@@ -1,0 +1,53 @@
+[gd_scene load_steps=6 format=3 uid="uid://4wwai3oba5w7"]
+
+[ext_resource type="Script" path="res://scenes/sub/sign_checkpoint.gd" id="1_ftkil"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_n1yrc"]
+radius = 14.0
+height = 34.0
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_q8uhj"]
+size = Vector2(4, 18)
+
+[sub_resource type="Gradient" id="Gradient_yl2md"]
+offsets = PackedFloat32Array(0.00714286, 0.689286, 0.960714, 1)
+colors = PackedColorArray(0.294118, 0.294118, 0.294118, 1, 0.843968, 0.789991, 0.738218, 1, 0.960714, 0.960714, 0.960714, 1, 0, 0, 0, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_m16d1"]
+gradient = SubResource("Gradient_yl2md")
+fill_to = Vector2(0, 0)
+
+[node name="SignCheckpoint" type="CharacterBody2D"]
+script = ExtResource("1_ftkil")
+
+[node name="InteractiveArea" type="Area2D" parent="."]
+
+[node name="Area" type="CollisionShape2D" parent="InteractiveArea"]
+position = Vector2(2, 53)
+rotation = 1.5708
+shape = SubResource("CapsuleShape2D_n1yrc")
+
+[node name="Hitbox" type="CollisionShape2D" parent="."]
+position = Vector2(2, 44)
+shape = SubResource("RectangleShape2D_q8uhj")
+
+[node name="Post" type="TextureRect" parent="."]
+offset_top = -13.0
+offset_right = 4.0
+offset_bottom = 53.0
+texture = SubResource("GradientTexture2D_m16d1")
+expand_mode = 1
+
+[node name="LampHead" type="TextureRect" parent="."]
+offset_left = -2.0
+offset_top = -13.0
+offset_right = 6.0
+offset_bottom = -8.0
+texture = SubResource("GradientTexture2D_m16d1")
+expand_mode = 1
+
+[node name="SignLabel" type="Label" parent="."]
+offset_left = 45.0
+offset_top = 31.0
+offset_right = 85.0
+offset_bottom = 54.0
