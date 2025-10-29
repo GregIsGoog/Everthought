@@ -11,6 +11,7 @@ var combo: float = 0
 var attack_cd: bool = false
 var weapon_damage: float = 1
 var attack_dir := "front" 
+var is_dead: bool = false
 
 # --- Healing vars ---
 var heal_timer: float = 0
@@ -78,6 +79,10 @@ func _physics_process(delta):
 		attack_location_manager()
 	if hit_charged:
 		weapon_damage * power_hit_damage_multi
+
+# --- Blanket Bans ---
+func stop_all_audio():
+	get_tree().call_group("Audio", "stop")
 
 # --- Attack ---
 func attack_manager():
@@ -157,6 +162,25 @@ func take_damage(from_position: Vector2):
 	if current_hp <= 0:
 		die()
 
+func take_damage_from_meteor():
+	current_hp -= 2
+	$HitColourTimer.start()
+	speed = 0
+	$MeteorHitStunTimer.start()
+	immunity_frames = false
+	$ImmunityFrames.start()
+	sprite.modulate = Color(1, 0.3, 0.3, 1)
+	$PlayerDamageRecievedSoundEffect.play()
+	combo = 0
+
+	if current_hp > max_hp:
+		current_hp = max_hp
+	if current_hp <= 0:
+		die()
+
+func _on_meteor_hit_stun_timer_timeout():
+	speed = 85
+
 func _on_hit_colour_timer_timeout():
 	sprite.modulate = Color(1, 1, 1, 1)
 
@@ -167,6 +191,11 @@ func _on_immunity_frames_timeout():
 	immunity_frames = false
 
 func die():
+	current_hp = 0
+	if is_dead:
+		return
+	is_dead = true
+
 	get_tree().call_group("Enemies", "set_physics_process", false)
 	get_tree().call_group("Enemies", "set_process", false)
 	set_physics_process(false)
@@ -174,12 +203,14 @@ func die():
 
 	velocity = Vector2.ZERO
 	$PlayerDeathSoundEffect.play()
+	stop_all_audio()
 	sprite.animation = "death"
 	sprite.play()
 
 	is_knockback = true
 	attack_cd = true
 	is_invisible = true
+
 	if walking_dir == "left":
 		$MainCharacterAnimation.play("Player_Death_Left")
 	elif walking_dir == "right":
@@ -187,7 +218,9 @@ func die():
 	else:
 		$MainCharacterAnimation.play("Player_Death_Right")
 
-	await get_tree().create_timer(3).timeout
+	await get_tree().create_timer(2.79).timeout
+	$PlayerDeathSoundEffect.stop()
+	await get_tree().create_timer(0.21).timeout
 	await wait_for_input()
 	get_tree().reload_current_scene()
 
@@ -354,3 +387,4 @@ func update_animation():
 			sprite.animation = walking_dir + "_idle"
 
 	sprite.play()
+
