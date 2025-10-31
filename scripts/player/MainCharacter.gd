@@ -4,19 +4,19 @@ extends CharacterBody2D
 signal object_hit(dir: Vector2)
 
 # --- Basic vars ---
-var speed: float = 85
-var current_hp: float = 5
-var max_hp: float = 5
-var combo: float = 0
+var speed: int = 85
+var current_hp: int = 5
+var max_hp: int = 5
+var combo: int = 0
 var attack_cd: bool = false
 var weapon_damage: float = 1
-var attack_dir := "front" 
+var attack_dir: String = "front" 
 var is_dead: bool = false
 
 # --- Healing vars ---
 var heal_timer: float = 0
 var heal_hold: bool = false
-var vitality: float = 2
+var vitality: int = 2
 var heal_mode: bool = false
 var heal_time: float = 3
 
@@ -27,7 +27,7 @@ var invis_cd: bool = false
 # --- Movement vars ---
 var input_vector := Vector2.ZERO
 var is_walking: bool = false
-var walking_dir := "front"
+var walking_dir: String = "front"
 var afterimage_frame_counter = 0
 
 # --- Knockback ---
@@ -35,13 +35,35 @@ var knockback_velocity: Vector2 = Vector2.ZERO
 var knockback_decay: float = 600.0
 var is_knockback: bool = false
 var immunity_frames: bool = false
+var meteor_stunned: bool = false
+var is_shaking: bool = false
 
 # --- Power Hit ---
-var power_hit_damage_multi: float = 10000
+var power_hit_damage_multi: int = 10000
 var hit_charged: bool = false
 var hit_charging: bool = false
 var hit_charge_timer: float = 0
 var hit_charge_time: float = 1.5
+
+# --- Directions ---
+var attack_offsets = {
+	"front": Vector2(0,8),
+	"back": Vector2(0,-8),
+	"left": Vector2(-8,0),
+	"right": Vector2(8,0)
+}
+var attack_rotations = {
+	"front": PI/2,
+	"back": -PI/2,
+	"left": -PI,
+	"right": 0
+}
+var dir_to_anim = {
+	Vector2(1, 0): "right",
+	Vector2(-1, 0): "left",
+	Vector2(0, -1): "back",
+	Vector2(0, 1): "front"
+}
 
 # --- System Vars ---
 @onready var sprite: AnimatedSprite2D = $CharacterSprite
@@ -54,14 +76,15 @@ func _ready():
 
 # --- Main Loop ---
 func _physics_process(delta):
-	get_input()
-	move_character(delta)
-	update_animation()
 	health_display_manage()
-	heal(delta)
-	invis()
 	combo_manage()
-	attack_manager()
+	get_input()
+	update_animation()
+	if if_can_move():
+		move_character(delta)
+		attack_manager()
+		invis()
+		heal(delta)
 
 	if combo >= 5:
 		afterimage_frame_counter += 1
@@ -83,6 +106,24 @@ func _physics_process(delta):
 # --- Blanket Bans ---
 func stop_all_audio():
 	get_tree().call_group("Audio", "stop")
+
+# --- Return Functions ---
+func if_can_move() -> bool:
+	return not is_knockback and not meteor_stunned and not is_dead
+
+func get_current_speed() -> int:
+	if is_knockback or meteor_stunned or heal_hold:
+		return 0
+	elif is_invisible:
+		return 190
+	elif hit_charging:
+		return 40
+	elif combo == 5:
+		return 115
+	elif combo >= 10:
+		return 145
+	else:
+		return 85
 
 # --- Attack ---
 func attack_manager():
@@ -121,21 +162,8 @@ func _on_attack_cooldown_timeout():
 	attack_cd = false
 
 func attack_location_manager():
-	var offset := Vector2.ZERO
-	var rotation_angle := 0.0
-	match attack_dir:  
-		"front":
-			offset = Vector2(0, 8)
-			rotation_angle = PI/2
-		"back":
-			offset = Vector2(0, -8)
-			rotation_angle = -PI/2
-		"left":
-			offset = Vector2(-8, 0)
-			rotation_angle = -PI
-		"right":
-			offset = Vector2(8, 0)
-			rotation_angle = 0
+	var offset = attack_offsets.get(attack_dir, Vector2.ZERO)
+	var rotation_angle = attack_rotations.get(attack_dir, 0)
 	$AttackArea.position = sprite.position + offset
 	$AttackArea.rotation = rotation_angle
 	$AttackAnimation.position = $AttackArea.position
@@ -145,9 +173,8 @@ func attack_location_manager():
 func take_damage(from_position: Vector2):
 	current_hp -= 1
 	$HitColourTimer.start()
-	speed = 0
 	$HitStunTimer.start()
-	immunity_frames = false
+	immunity_frames = true
 	$ImmunityFrames.start()
 	sprite.modulate = Color(1, 0.3, 0.3, 1)
 	$PlayerDamageRecievedSoundEffect.play()
@@ -162,16 +189,22 @@ func take_damage(from_position: Vector2):
 	if current_hp <= 0:
 		die()
 
-func take_damage_from_meteor():
+func take_damage_from_meteor(source_position: Vector2):
 	current_hp -= 2
 	$HitColourTimer.start()
-	speed = 0
 	$MeteorHitStunTimer.start()
-	immunity_frames = false
+	immunity_frames = true
 	$ImmunityFrames.start()
 	sprite.modulate = Color(1, 0.3, 0.3, 1)
+	sprite.animation = "front_idle"
 	$PlayerDamageRecievedSoundEffect.play()
 	combo = 0
+
+	# Set knockback from meteor
+	var dir = (global_position - source_position).normalized()
+	knockback_velocity = dir * 200   # you can tweak the strength
+	meteor_stunned = true
+	is_knockback = true
 
 	if current_hp > max_hp:
 		current_hp = max_hp
@@ -179,13 +212,13 @@ func take_damage_from_meteor():
 		die()
 
 func _on_meteor_hit_stun_timer_timeout():
-	speed = 85
+	meteor_stunned = false
 
 func _on_hit_colour_timer_timeout():
 	sprite.modulate = Color(1, 1, 1, 1)
 
 func _on_hit_stun_timer_timeout():
-	speed = 85
+	is_knockback = false
 
 func _on_immunity_frames_timeout():
 	immunity_frames = false
@@ -202,7 +235,10 @@ func die():
 	set_process(false)
 
 	velocity = Vector2.ZERO
-	$PlayerDeathSoundEffect.play()
+	if not is_dead:
+		$PlayerDeathSoundEffect.play()
+	elif is_dead:
+		return
 	stop_all_audio()
 	sprite.animation = "death"
 	sprite.play()
@@ -217,6 +253,7 @@ func die():
 		$MainCharacterAnimation.play("Player_Death_Right")
 	else:
 		$MainCharacterAnimation.play("Player_Death_Right")
+
 
 	await get_tree().create_timer(2.79).timeout
 	$PlayerDeathSoundEffect.stop()
@@ -241,11 +278,9 @@ func combo_manage():
 		await get_tree().create_timer(1.325).timeout
 		$AudioStreamPlayer2D.play()
 		$FlowStateActivated.stop()
-		speed = 115
 		$ColorRect.visible = true
 		Engine.time_scale = 1
 	if combo >= 10:
-		speed = 145
 		weapon_damage * 1.5
 		$CharacterSprite.speed_scale = 1.5
 	if combo >= 15:
@@ -256,7 +291,6 @@ func combo_manage():
 			weapon_damage / 1.5
 		if speed == 145:
 			weapon_damage / 3
-		speed = 85
 		$ColorRect.visible = false
 
 func combo_increase():
@@ -270,23 +304,20 @@ func health_display_manage():
 func heal(delta):
 	if Input.is_action_just_pressed("heal") and combo >= 6:
 		$HealSoundEffect.play()
-	if Input.is_action_pressed("heal") and not heal_mode and combo >= 16 and current_hp < max_hp and not is_knockback:
+	if Input.is_action_pressed("heal") and not heal_mode and combo >= 16 and current_hp < max_hp and not is_knockback and not meteor_stunned:
 		heal_timer += delta
 		heal_hold = true
-		speed = 0
 		sprite.animation = walking_dir + "_idle"
 		if heal_timer >= heal_time:
 			heal_timer = 0
 			combo -= 15
 			current_hp += 1
-			speed = 85
 			heal_mode = false
 			$HealTimer.start()
 			$ChargeAttackSoundEffect.stop()
 	if Input.is_action_just_released("heal"):
 		heal_timer = 0
 		heal_hold = false
-		speed = 85
 		$HealSoundEffect.stop()
 
 func _on_heal_timer_timeout():
@@ -297,7 +328,6 @@ func invis():
 	if Input.is_action_just_pressed("invis") and not invis_cd and not is_knockback and not is_invisible:
 		if combo >= 6:
 			combo -= 10
-			speed = 190
 			sprite.modulate.a = 0.5
 			$InvisTimer.start()
 			is_invisible = true
@@ -305,7 +335,6 @@ func invis():
 
 func _on_invis_timer_timeout():
 	sprite.modulate.a = 1.0
-	speed = 85
 	is_invisible = false
 	$InvisCDTimer.start()
 	invis_cd = true
@@ -318,16 +347,13 @@ func power_hit(delta):
 	if Input.is_action_pressed("charge_hit") and not is_knockback and not hit_charged:
 		hit_charge_timer += delta
 		hit_charging = true
-		speed = 40
 		if hit_charge_timer >= hit_charge_time:
 			hit_charge_timer = 0
 			hit_charged = true
-			speed = 85
 			hit_charging = false
 	if Input.is_action_just_released("charge_hit"):
 		hit_charge_timer = 0
 		hit_charging = 0
-		speed = 85
 		if not hit_charged:
 			$ChargeAttackSoundEffect.stop()
 
@@ -350,8 +376,6 @@ func spawn_afterimage():
 
 # --- Input & Movement ---
 func get_input():
-	if is_knockback:
-		return
 	input_vector = Vector2.ZERO
 	if Input.is_action_pressed("right"):
 		input_vector.x += 1
@@ -362,7 +386,7 @@ func get_input():
 	if Input.is_action_pressed("down"):
 		input_vector.y += 1
 	input_vector = input_vector.normalized()
-	velocity = input_vector * speed
+	velocity = input_vector * get_current_speed()
 
 func move_character(delta):
 	move_and_slide()
@@ -370,21 +394,21 @@ func move_character(delta):
 
 func update_animation():
 	if not is_knockback:
-		if input_vector.x > 0:
+		if input_vector.x > 0 and not meteor_stunned:
 			sprite.animation = "right"
 			walking_dir = "right"
-		elif input_vector.x < 0:
+		elif input_vector.x < 0 and not meteor_stunned:
 			sprite.animation = "left"
 			walking_dir = "left"
-		elif input_vector.y < 0 and input_vector.x == 0:
+		elif input_vector.y < 0 and input_vector.x == 0 and not meteor_stunned:
 			sprite.animation = "back"
 			walking_dir = "back"
-		elif input_vector.y > 0 and input_vector.x == 0:
+		elif input_vector.y > 0 and input_vector.x == 0 and not meteor_stunned:
 			sprite.animation = "front"
 			walking_dir = "front"
 
-		if input_vector == Vector2.ZERO:
-			sprite.animation = walking_dir + "_idle"
+	if input_vector == Vector2.ZERO:
+		sprite.animation = walking_dir + "_idle"
 
 	sprite.play()
 

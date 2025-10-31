@@ -20,4 +20,3 @@ func _ready():
 
 func die():
 	_physics_process(false)
-

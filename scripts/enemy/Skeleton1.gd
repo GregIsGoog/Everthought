@@ -5,7 +5,7 @@ var health: float = 3
 var speed: float = 40
 
 # --- Handlers ---
-var mode := "idle"
+var mode: String = "idle"
 var directionx := 0
 var directiony := 0
 var target = null
@@ -22,22 +22,15 @@ var immune: bool = false
 var starting_pos: Vector2 = Vector2.ZERO
 
 # --- Attack Vars --- 
-var meteor1 = Vector2.ZERO
-var meteor2 = Vector2.ZERO
-var meteor3 = Vector2.ZERO
+var meteor1 :Vector2 = Vector2.ZERO
 var meteor1_tracking: bool = false
-var meteor2_tracking: bool = false
-var meteor3_tracking: bool = false
+var meteor_landing: Vector2 = Vector2.ZERO
 
 func _ready():
 	skeleton.play("idle")
 	starting_pos = global_position
 	$meteor1.visible = false
-	$meteor2.visible = false
-	$meteor3.visible = false
-	$meteor1/meteor1label  .visible = false
-	$meteor2/meteor1label2.visible = false
-	$meteor3/meteor1label3.visible = false
+	$meteor1/meteor1label .visible = false
 
 # --- Movement and Direction ---
 func pursuit_start():
@@ -147,6 +140,9 @@ func _physics_process(delta):
 
 	animation_handler()
 
+	if main.is_dead:
+		$meteor1.visible = false
+
 # --- Meteor 1 ---
 	if meteor1_tracking and not main.is_invisible:
 		$meteor1.global_position = main.global_position
@@ -154,22 +150,6 @@ func _physics_process(delta):
 	else:
 		$meteor1.global_position = meteor1
 		$Meteor1Area/Meteor1Hitbox.global_position = meteor1
-
-	# --- Meteor 2 ---
-	if meteor2_tracking and not main.is_invisible:
-		$meteor2.global_position = main.global_position
-		$Meteor2Area/Meteor2Hitbox.global_position = main.global_position
-	else:
-		$meteor2.global_position = meteor2
-		$Meteor2Area/Meteor2Hitbox.global_position = meteor2
-
-	# --- Meteor 3 ---
-	if meteor3_tracking and not main.is_invisible:
-		$meteor3.global_position = main.global_position
-		$Meteor3Area/Meteor3Hitbox.global_position = main.global_position
-	else:
-		$meteor3.global_position = meteor3
-		$Meteor3Area/Meteor3Hitbox.global_position = meteor3
 
 func _on_attack_area_body_entered(body):
 	if body.is_in_group("Player"):
@@ -193,21 +173,6 @@ func start_tracking():
 	$meteor1.visible = true
 	$AnimationTree.play("meteor1_pulse")
 
-	await get_tree().create_timer(0.33).timeout
-	if main.is_dead:
-		return
-	
-	meteor2_tracking = true
-	$meteor2.visible = true
-	$AnimationTree.play("meteor2_pulse")
-	
-	await get_tree().create_timer(0.33).timeout
-	if main.is_dead:
-		return
-
-	meteor3_tracking = true
-	$meteor3.visible = true
-	$AnimationTree.play("meteor3_pulse")
 
 func _on_meteor_1_telegraph_timer_timeout():
 	$Meteor1AttackTimer.start()
@@ -219,23 +184,7 @@ func start_telegraphing():
 
 	meteor1 = main.global_position
 	meteor1_tracking = false
-	$AnimationTree.play("meteor1_fast_pulse")
-
-	await get_tree().create_timer(0.33).timeout
-	if main.is_dead:
-		return
-
-	meteor2 = main.global_position
-	meteor2_tracking = false
-	$AnimationTree2.play("meteor2_fast_pulse")
-
-	await get_tree().create_timer(0.33).timeout
-	if main.is_dead:
-		return
-
-	meteor3 = main.global_position
-	meteor3_tracking = false
-	$AnimationTree3.play("meteor3_fast_pulse")
+	$AnimationTree.speed_scale = 0.2
 
 func _on_meteor_1_attack_timer_timeout():
 	$AudioStreamPlayer2D.play()
@@ -247,33 +196,11 @@ func launch_meteor_attack():
 
 	$meteor1.visible = false
 	$meteor1/meteor1label.visible = true
-	await get_tree().create_timer(0.33).timeout
-	$meteor1/meteor1label.visible = false
 	for body in $Meteor1Area.get_overlapping_bodies():
 		if body.is_in_group("Player"):
-			main.take_damage_from_meteor()
-
-	$meteor2.visible = false
-	$meteor2/meteor1label2.visible = true
+			body.take_damage_from_meteor($meteor1.global_position)
 	await get_tree().create_timer(0.33).timeout
-	if main.is_dead:
-		return
-
-	$meteor2/meteor1label2.visible = false
-	for body in $Meteor2Area.get_overlapping_bodies():
-		if body.is_in_group("Player"):
-			main.take_damage_from_meteor()
-
-	$meteor3.visible = false
-	$meteor3/meteor1label3.visible = true
-	await get_tree().create_timer(0.33).timeout
-	if main.is_dead:
-		return
-
-	$meteor3/meteor1label3.visible = false
-	for body in $Meteor3Area.get_overlapping_bodies():
-		if body.is_in_group("Player"):
-			main.take_damage_from_meteor()
+	$meteor1/meteor1label.visible = false
 
 	if mode == "pursuit":
 		$Meteor1TrackerTimer.start()

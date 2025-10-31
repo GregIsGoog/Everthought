@@ -1,7 +1,9 @@
-[gd_scene load_steps=24 format=3 uid="uid://badt4m8tpqm8c"]
+[gd_scene load_steps=35 format=3 uid="uid://badt4m8tpqm8c"]
 
 [ext_resource type="Script" path="res://scripts/enemy/Skeleton1.gd" id="1_u33hg"]
 [ext_resource type="Texture2D" uid="uid://y57kqvaqexvb" path="res://assets/textures/sprites/enemy/sprite_enemy_skeleton.png" id="2_qnq8l"]
+[ext_resource type="AudioStream" uid="uid://yionpprln20o" path="res://assets/audio/sfx/enemy/sfx_enemy_meteor_attack.ogg" id="3_mtaw7"]
+[ext_resource type="FontFile" uid="uid://dfocytrdeht66" path="res://assets/fonts/OptimusPrinceps.ttf" id="3_qdnn1"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_qljgf"]
 atlas = ExtResource("2_qnq8l")
@@ -159,6 +161,115 @@ radius = 92.0054
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ayqtx"]
 size = Vector2(14, 20)
 
+[sub_resource type="Gradient" id="Gradient_wacli"]
+offsets = PackedFloat32Array(0, 0.993976)
+colors = PackedColorArray(0.913725, 0, 0, 1, 0.913725, 0, 0, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_brfyo"]
+gradient = SubResource("Gradient_wacli")
+
+[sub_resource type="Animation" id="Animation_yfjl2"]
+loop_mode = 1
+step = 0.5
+tracks/0/type = "bezier"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("meteor1:scale:x")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"handle_modes": PackedInt32Array(0, 0, 0),
+"points": PackedFloat32Array(0.203125, -0.25, 0, 0.25, 0, 0.15, -0.25, 0, 0.25, 0, 0.2, -0.25, 0, 0.25, 0),
+"times": PackedFloat32Array(0, 0.5, 1)
+}
+tracks/1/type = "bezier"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("meteor1:scale:y")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"handle_modes": PackedInt32Array(0, 0, 0),
+"points": PackedFloat32Array(0.296875, -0.25, 0, 0.25, 0, 0.219, -0.25, 0, 0.25, 0, 0.292, -0.25, 0, 0.25, 0),
+"times": PackedFloat32Array(0, 0.5, 1)
+}
+
+[sub_resource type="Animation" id="Animation_01eia"]
+resource_name = "meteor1_fast_pulse"
+length = 0.5
+loop_mode = 1
+step = 0.25
+tracks/0/type = "bezier"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("meteor1:scale:x")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"handle_modes": PackedInt32Array(0, 0, 0),
+"points": PackedFloat32Array(0.75, -0.25, 0, 0.25, 0, 0.700373, -0.25, 0, 0.25, 0, 0.75, -0.25, 0, 0.25, 0),
+"times": PackedFloat32Array(0, 0.25, 0.5)
+}
+tracks/1/type = "bezier"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("meteor1:scale:y")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"handle_modes": PackedInt32Array(0, 0, 0),
+"points": PackedFloat32Array(0.655, -0.25, 0, 0.25, 0, 0.610674, -0.25, 0, 0.25, 0, 0.655, -0.25, 0, 0.25, 0),
+"times": PackedFloat32Array(0, 0.25, 0.5)
+}
+
+[sub_resource type="Animation" id="Animation_xwflr"]
+resource_name = "meteor1_pulse"
+loop_mode = 1
+step = 0.5
+tracks/0/type = "bezier"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("meteor1:scale:x")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"handle_modes": PackedInt32Array(0, 0, 0),
+"points": PackedFloat32Array(0.4, -0.25, 0, 0.25, 0, 0.3, -0.25, 0, 0.25, 0, 0.4, -0.25, 0, 0.25, 0),
+"times": PackedFloat32Array(0, 0.5, 1)
+}
+tracks/1/type = "bezier"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("meteor1:scale:y")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"handle_modes": PackedInt32Array(0, 0, 0),
+"points": PackedFloat32Array(0.346, -0.25, 0, 0.25, 0, 0.26, -0.25, 0, 0.25, 0, 0.347, -0.25, 0, 0.25, 0),
+"times": PackedFloat32Array(0, 0.5, 1)
+}
+
+[sub_resource type="Animation" id="Animation_5i7f1"]
+resource_name = "meteor2_pulse"
+loop_mode = 1
+
+[sub_resource type="Animation" id="Animation_vh11t"]
+resource_name = "meteor3_pulse"
+loop_mode = 1
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_ps2p4"]
+_data = {
+"RESET": SubResource("Animation_yfjl2"),
+"meteor1_fast_pulse": SubResource("Animation_01eia"),
+"meteor1_pulse": SubResource("Animation_xwflr"),
+"meteor2_pulse": SubResource("Animation_5i7f1"),
+"meteor3_pulse": SubResource("Animation_vh11t")
+}
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_fvpit"]
+radius = 10.875
+height = 26.0
+
 [node name="Skeleton" type="CharacterBody2D" groups=["Enemy"]]
 position = Vector2(-114, 13)
 script = ExtResource("1_u33hg")
@@ -196,9 +307,60 @@ wait_time = 0.05
 wait_time = 0.15
 one_shot = true
 
+[node name="meteor1" type="Sprite2D" parent="."]
+position = Vector2(3.8147e-06, 1)
+scale = Vector2(0.203125, 0.296875)
+texture = SubResource("GradientTexture2D_brfyo")
+
+[node name="meteor1label" type="Label" parent="meteor1"]
+offset_left = -33.3333
+offset_top = -13.8462
+offset_right = 17.6667
+offset_bottom = 9.15384
+theme_override_colors/font_color = Color(1, 0, 0, 1)
+theme_override_colors/font_shadow_color = Color(1, 0, 0, 1)
+theme_override_colors/font_outline_color = Color(1, 0, 0, 1)
+theme_override_fonts/font = ExtResource("3_qdnn1")
+text = "BOOM
+"
+horizontal_alignment = 1
+vertical_alignment = 1
+metadata/_edit_use_anchors_ = true
+
+[node name="AnimationTree" type="AnimationPlayer" parent="."]
+libraries = {
+"": SubResource("AnimationLibrary_ps2p4")
+}
+
+[node name="Meteor1TrackerTimer" type="Timer" parent="."]
+wait_time = 3.0
+one_shot = true
+
+[node name="Meteor1TelegraphTimer" type="Timer" parent="."]
+wait_time = 2.0
+one_shot = true
+
+[node name="Meteor1AttackTimer" type="Timer" parent="."]
+wait_time = 0.1
+one_shot = true
+
+[node name="AudioStreamPlayer2D" type="AudioStreamPlayer2D" parent="." groups=["Audio"]]
+stream = ExtResource("3_mtaw7")
+volume_db = 24.0
+
+[node name="Meteor1Area" type="Area2D" parent="."]
+
+[node name="Meteor1Hitbox" type="CollisionShape2D" parent="Meteor1Area"]
+position = Vector2(7.62939e-06, 1.125)
+rotation = 1.5708
+shape = SubResource("CapsuleShape2D_fvpit")
+
 [connection signal="body_entered" from="AgroRange" to="." method="_on_agro_range_body_entered"]
 [connection signal="body_exited" from="AgroRange" to="." method="_on_agro_range_body_exited"]
 [connection signal="body_entered" from="AttackArea" to="." method="_on_attack_area_body_entered"]
 [connection signal="timeout" from="DamageColourTimer" to="." method="_on_damage_colour_timer_timeout"]
 [connection signal="timeout" from="HitStunTimer" to="." method="_on_hit_stun_timer_timeout"]
 [connection signal="timeout" from="ImmunityFrames" to="." method="_on_immunity_frames_timeout"]
+[connection signal="timeout" from="Meteor1TrackerTimer" to="." method="_on_meteor_1_tracker_timer_timeout"]
+[connection signal="timeout" from="Meteor1TelegraphTimer" to="." method="_on_meteor_1_telegraph_timer_timeout"]
+[connection signal="timeout" from="Meteor1AttackTimer" to="." method="_on_meteor_1_attack_timer_timeout"]
